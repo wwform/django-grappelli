@@ -61,7 +61,13 @@ def switch_user(request, object_id):
 
     # find backend
     if not hasattr(target_user, 'backend'):
-        for backend in settings.AUTHENTICATION_BACKENDS:
+        # we are using the axes backend to prevent blocked users from logging in
+        # which does not have get_user so we need to get the user from another
+        # backend
+        for backend in reversed(settings.AUTHENTICATION_BACKENDS):
+            loaded_backend = load_backend(backend)
+            if not hasattr(loaded_backend, "get_user"):
+                continue
             if target_user == load_backend(backend).get_user(target_user.pk):
                 target_user.backend = backend
                 break
